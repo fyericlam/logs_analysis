@@ -14,7 +14,12 @@ file.write('---Logs analysis---\n')
 # What are the most popular three articles of all time?
 db = psycopg2.connect(dbname=dbName)
 
-query = "select title, count(*) as views from (select title, concat('/article/',slug) as path from articles) as articles_path, log where articles_path.path=log.path group by title order by views desc;"
+query = """select title, count(*) as views
+        from (select title, concat('/article/',slug) as path from articles)
+            as articles_path, log
+        where articles_path.path=log.path
+        group by title
+        order by views desc;"""
 
 db = psycopg2.connect(dbname=dbName)
 c = db.cursor()
@@ -34,7 +39,13 @@ for articles in popular_articles[:3]:
 # Who are the most popular article authors of all time?
 db = psycopg2.connect(dbname=dbName)
 
-query = "select name, count(*) as views from (select name, title, concat('/article/',slug) as path from authors, articles where authors.id=articles.author) as authorship, log where authorship.path=log.path group by name order by views desc;"
+query = """select name, count(*) as views
+        from (select name, title, concat('/article/',slug) as path
+            from authors, articles where authors.id=articles.author)
+            as authorship, log
+        where authorship.path=log.path
+        group by name
+        order by views desc;"""
 
 db = psycopg2.connect(dbname=dbName)
 c = db.cursor()
@@ -52,7 +63,14 @@ for author in popular_authors:
 # On which days did more than 1% of requests lead to errors?
 db = psycopg2.connect(dbname=dbName)
 
-query = "select date, (100.0*v1.errors/v2.all) as percent_errors from (select date(time) as date_error, count(*) as errors from log where status like '4%' or status like '5%' group by date(time)) as v1 join (select date(time), count(*) as all from log group by date(time)) as v2 on v1.date_error=v2.date where (100.0*v1.errors/v2.all)>2 order by date desc;"
+query = """select date, (100.0*v1.errors/v2.all) as percent_errors
+        from (select date(time) as date_error, count(*) as errors from log
+            where status like '4%' or status like '5%' group by date(time))
+            as v1 join
+            (select date(time), count(*) as all from log group by date(time))
+            as v2 on v1.date_error=v2.date
+        where (100.0*v1.errors/v2.all)>2
+        order by date desc;"""
 
 db = psycopg2.connect(dbname=dbName)
 c = db.cursor()
