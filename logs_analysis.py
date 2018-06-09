@@ -1,4 +1,4 @@
-#! python3 log_analysis.py
+#!/usr/bin/env python3
 # An internal reporting tool that will use information from the database
 # to discover what kind of articles the site's readers like.
 
