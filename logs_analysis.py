@@ -22,6 +22,7 @@ def connect(dbName):
         print('Unable to connect to database')
         sys.exit(1)
 
+
 def get_query(query):
     """
         Fetch query from database
@@ -38,67 +39,86 @@ def get_query(query):
     db.close()
     return results
 
-file = open('answers.txt', 'w')
 
-print('---Logs analysis---\n')
-file.write('---Logs analysis---\n')
+def print_top_articles():
+    """Return the most popular three articles of all time"""
 
-# What are the most popular three articles of all time?
-query = """select title, count(*) as views
-        from (select title, concat('/article/',slug) as path from articles)
-            as articles_path, log
-        where articles_path.path=log.path
-        group by title
-        order by views desc;"""
+    query = """select title, count(*) as views
+            from (select title, concat('/article/',slug) as path from articles)
+                as articles_path, log
+            where articles_path.path=log.path
+            group by title
+            order by views desc;"""
 
-popular_articles = get_query(query)
-print('\n')
-file.write('\n')
-print('* The most popular three articles of all time:\n')
-file.write('* The most popular three articles of all time:\n')
-for articles in popular_articles[:3]:
-    print('\"' + articles[0] + '\"' + ' -- ' +
-          str(articles[1]) + ' views\n')
-    file.write('\"' + articles[0] + '\"' + ' -- ' +
-               str(articles[1]) + ' views\n')
+    results = get_query(query)
 
-# Who are the most popular article authors of all time?
-query = """select name, count(*) as views
-        from (select name, title, concat('/article/',slug) as path
-            from authors, articles where authors.id=articles.author)
-            as authorship, log
-        where authorship.path=log.path
-        group by name
-        order by views desc;"""
+    top_articles = '\n'
+    top_articles += '---Logs analysis---\n'
+    top_articles += '\n'
+    top_articles += '* The most popular three articles of all time:\n'
+    for article in results[:3]:
+        top_articles += \
+            '\"' + article[0] + '\"' + ' -- ' + str(article[1]) + ' views\n'
 
-popular_authors = get_query(query)
-print('\n')
-file.write('\n')
-print('* The most popular article authors of all time:\n')
-file.write('* The most popular article authors of all time:\n')
-for author in popular_authors:
-    print(author[0] + ' -- ' + str(author[1]) + ' views\n')
-    file.write(author[0] + ' -- ' + str(author[1]) + ' views\n')
+    return top_articles
 
-# On which days did more than 1% of requests lead to errors?
-query = """select date, (100.0*v1.errors/v2.all) as percent_errors
-        from (select date(time) as date_error, count(*) as errors from log
-            where status like '4%' or status like '5%' group by date(time))
-            as v1 join
-            (select date(time), count(*) as all from log group by date(time))
-            as v2 on v1.date_error=v2.date
-        where (100.0*v1.errors/v2.all)>2
-        order by date desc;"""
 
-bad_days = get_query(query)
-print('\n')
-file.write('\n')
-print('* Day(s) more than 1% of requests led to errors:\n')
-file.write('* Day(s) more than 1% of requests led to errors:\n')
-for day in bad_days:
-    print(str(day[0].strftime('%B %d, %Y')) +
-          ' -- ' + str(round(day[1], 1)) + '% errors')
-    file.write(str(day[0].strftime('%B %d, %Y')) +
-               ' -- ' + str(round(day[1], 1)) + '% errors')
+def print_top_authors():
+    """Return the most popular article authors of all time"""
 
-file.close()
+    query = """select name, count(*) as views
+            from (select name, title, concat('/article/',slug) as path
+                from authors, articles where authors.id=articles.author)
+                as authorship, log
+            where authorship.path=log.path
+            group by name
+            order by views desc;"""
+
+    results = get_query(query)
+
+    top_authors = '\n'
+    top_authors += '---Logs analysis---\n'
+    top_authors += '\n'
+    top_authors += '* The most popular article authors of all time:\n'
+    for author in results:
+        top_authors += \
+            author[0] + ' -- ' + str(author[1]) + ' views\n'
+
+    return top_authors
+
+
+def print_top_error_days():
+    """Return days more than 1% of requests led to errors"""
+
+    query = """select date, (100.0*v1.errors/v2.all) as percent_errors
+            from (select date(time) as date_error, count(*) as errors from log
+                where status like '4%' or status like '5%' group by date(time))
+                as v1 join
+                (select date(time), count(*) as all from log group by date(time))
+                as v2 on v1.date_error=v2.date
+            where (100.0*v1.errors/v2.all)>2
+            order by date desc;"""
+
+    results = get_query(query)
+
+    bad_days = '\n'
+    bad_days += '---Logs analysis---\n'
+    bad_days += '\n'
+    bad_days += '* Day(s) more than 1% of requests led to errors:\n'
+    for day in results:
+        bad_days += \
+            str(day[0].strftime('%B %d, %Y')) + ' -- ' \
+            + str(round(day[1], 1)) + '% errors'
+
+    return bad_days
+
+
+if __name__ == '__main__':
+    print(print_top_articles())
+    print(print_top_authors())
+    print(print_top_error_days())
+
+    file = open('report.txt', 'w')
+    file.write(print_top_articles() +
+               print_top_authors() + print_top_error_days())
+    file.close()
