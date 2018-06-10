@@ -3,8 +3,25 @@
 # to discover what kind of articles the site's readers like.
 
 import psycopg2
+import sys
 
-dbName = "news"
+dbName = 'news'
+
+
+def connect(dbName):
+    """
+        Connect to the PostgreSQL database
+        Input: database name
+        Return: database connection and cursor (db, c)
+    """
+    try:
+        db = psycopg2.connect('dbname={}'.format(dbName))
+        c = db.cursor()
+        return db, c
+    except psycopg2.Error:
+        print('Unable to connect to database')
+        sys.exit(1)
+
 
 file = open('answers.txt', 'w')
 
@@ -12,8 +29,6 @@ print('---Logs analysis---\n')
 file.write('---Logs analysis---\n')
 
 # What are the most popular three articles of all time?
-db = psycopg2.connect(dbname=dbName)
-
 query = """select title, count(*) as views
         from (select title, concat('/article/',slug) as path from articles)
             as articles_path, log
@@ -21,8 +36,7 @@ query = """select title, count(*) as views
         group by title
         order by views desc;"""
 
-db = psycopg2.connect(dbname=dbName)
-c = db.cursor()
+db, c = connect(dbName)
 c.execute(query)
 popular_articles = c.fetchall()
 db.close()
@@ -37,8 +51,6 @@ for articles in popular_articles[:3]:
                str(articles[1]) + ' views\n')
 
 # Who are the most popular article authors of all time?
-db = psycopg2.connect(dbname=dbName)
-
 query = """select name, count(*) as views
         from (select name, title, concat('/article/',slug) as path
             from authors, articles where authors.id=articles.author)
@@ -47,8 +59,7 @@ query = """select name, count(*) as views
         group by name
         order by views desc;"""
 
-db = psycopg2.connect(dbname=dbName)
-c = db.cursor()
+db, c = connect(dbName)
 c.execute(query)
 popular_authors = c.fetchall()
 db.close()
@@ -61,8 +72,6 @@ for author in popular_authors:
     file.write(author[0] + ' -- ' + str(author[1]) + ' views\n')
 
 # On which days did more than 1% of requests lead to errors?
-db = psycopg2.connect(dbname=dbName)
-
 query = """select date, (100.0*v1.errors/v2.all) as percent_errors
         from (select date(time) as date_error, count(*) as errors from log
             where status like '4%' or status like '5%' group by date(time))
@@ -72,8 +81,7 @@ query = """select date, (100.0*v1.errors/v2.all) as percent_errors
         where (100.0*v1.errors/v2.all)>2
         order by date desc;"""
 
-db = psycopg2.connect(dbname=dbName)
-c = db.cursor()
+db, c = connect(dbName)
 c.execute(query)
 bad_days = c.fetchall()
 db.close()
