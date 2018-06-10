@@ -22,6 +22,21 @@ def connect(dbName):
         print('Unable to connect to database')
         sys.exit(1)
 
+def get_query(query):
+    """
+        Fetch query from database
+        Input: SQL query string
+        Return: query results in list (results)
+    """
+    # Connect to database and grab cursor
+    db, c = connect(dbName)
+    # Execute query
+    c.execute(query)
+    # Store results
+    results = c.fetchall()
+    # Close connection
+    db.close()
+    return results
 
 file = open('answers.txt', 'w')
 
@@ -36,10 +51,7 @@ query = """select title, count(*) as views
         group by title
         order by views desc;"""
 
-db, c = connect(dbName)
-c.execute(query)
-popular_articles = c.fetchall()
-db.close()
+popular_articles = get_query(query)
 print('\n')
 file.write('\n')
 print('* The most popular three articles of all time:\n')
@@ -59,10 +71,7 @@ query = """select name, count(*) as views
         group by name
         order by views desc;"""
 
-db, c = connect(dbName)
-c.execute(query)
-popular_authors = c.fetchall()
-db.close()
+popular_authors = get_query(query)
 print('\n')
 file.write('\n')
 print('* The most popular article authors of all time:\n')
@@ -81,10 +90,7 @@ query = """select date, (100.0*v1.errors/v2.all) as percent_errors
         where (100.0*v1.errors/v2.all)>2
         order by date desc;"""
 
-db, c = connect(dbName)
-c.execute(query)
-bad_days = c.fetchall()
-db.close()
+bad_days = get_query(query)
 print('\n')
 file.write('\n')
 print('* Day(s) more than 1% of requests led to errors:\n')
