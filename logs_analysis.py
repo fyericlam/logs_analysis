@@ -40,7 +40,7 @@ def get_query(query):
     return results
 
 
-def print_top_articles():
+def top_articles():
     """Return the most popular three articles of all time"""
 
     query = """select title, count(*) as views
@@ -63,7 +63,7 @@ def print_top_articles():
     return top_articles
 
 
-def print_top_authors():
+def top_authors():
     """Return the most popular article authors of all time"""
 
     query = """select name, count(*) as views
@@ -87,7 +87,7 @@ def print_top_authors():
     return top_authors
 
 
-def print_top_error_days():
+def top_error_days():
     """Return days more than 1% of requests led to errors"""
 
     query = """select date, (100.0*v1.errors/v2.all) as percent_errors
@@ -114,11 +114,10 @@ def print_top_error_days():
 
 
 if __name__ == '__main__':
-    print(print_top_articles())
-    print(print_top_authors())
-    print(print_top_error_days())
+    print(top_articles())
+    print(top_authors())
+    print(top_error_days())
 
     file = open('report.txt', 'w')
-    file.write(print_top_articles() +
-               print_top_authors() + print_top_error_days())
+    file.write(top_articles() + top_authors() + top_error_days())
     file.close()
